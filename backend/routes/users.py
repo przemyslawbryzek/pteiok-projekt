@@ -1,6 +1,8 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User
+from models import db, User, CartItem
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+
 
 users_bp = Blueprint('users', __name__)
 
@@ -27,10 +29,31 @@ def login():
     user = User.query.filter_by(email=data.get('email')).first()
     if not user or not check_password_hash(user.password, data.get('password')):
         return jsonify({"error": "Nieprawidłowy e-mail lub hasło"}), 401
+    access_token = access_token = create_access_token(
+    identity=str(user.id))
+    session_cart = session.get("cart", [])
+    for item in session_cart:
+        existing = CartItem.query.filter_by(user_id=user.id, product_id=item["product_id"]).first()
+        if existing:
+            existing.quantity += item["quantity"]
+        else:
+            db.session.add(CartItem(
+                user_id=user.id,
+                product_id=item["product_id"],
+                quantity=item["quantity"]
+            ))
+    db.session.commit()
+    session.pop("cart", None)
     return jsonify({
         "message": "Zalogowano pomyślnie",
-        "user": {
-            "id": user.id,
-            "email": user.email
-        }
+        "access_token": access_token
+    }), 200
+
+@users_bp.route('/api/profile', methods=['GET'])
+@jwt_required()
+def profile():
+    current_user = get_jwt_identity()
+    return jsonify({
+        "message": "Dane profilu użytkownika",
+        "user": current_user
     }), 200
