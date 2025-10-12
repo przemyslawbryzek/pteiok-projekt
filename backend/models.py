@@ -22,7 +22,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -45,3 +45,51 @@ class CartItem(db.Model):
                 "image_urls": self.product.images() if hasattr(self.product, 'images') else []
             }
         }
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    payments = db.relationship("Payment", backref="order", lazy=True)
+    items = db.relationship("OrderItem", backref="order", lazy=True)
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "status": self.status,
+            "total_amount": round(self.total_amount, 2),
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "items": [item.to_dict() for item in self.items],
+        }
+
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    price_at_purchase = db.Column(db.Float, nullable=False)
+
+    product = db.relationship("Product")
+
+    def to_dict(self):
+        return {
+            "product_id": self.product_id,
+            "product_name": self.product.name if self.product else None,
+            "quantity": self.quantity,
+            "price_at_purchase": round(self.price_at_purchase, 2),
+            "subtotal": round(self.price_at_purchase * self.quantity, 2),
+        }
+    
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
+    provider = db.Column(db.String(50), default="stripe")
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default="PLN")
+    status = db.Column(db.String(50), default="pending")
+    transaction_id = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    paid_at = db.Column(db.DateTime, nullable=True)
