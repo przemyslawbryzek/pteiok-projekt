@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import stripe, os
 from datetime import datetime
 from models import db, Order, Payment
+from utils.pdf_generator import generate_order_pdf
+from utils.pdf_signer import sign_pdf
 
 payment_bp = Blueprint("payment", __name__)
 
@@ -54,14 +56,14 @@ def stripe_webhook():
         session = event["data"]["object"]
         order_id = session["metadata"]["order_id"]
         payment_intent = event["data"]["object"]
-        amount = payment_intent["amount_received"] / 100
+        #amount = payment_intent["amount"] / 100
 
         order = Order.query.get(order_id)
         if order:
             payment = Payment(
                 order_id=order.id,
                 provider="stripe",
-                amount=amount,
+                amount=order.total_amount,
                 currency=payment_intent["currency"].upper(),
                 status="succeeded",
                 transaction_id=payment_intent["id"],
@@ -70,6 +72,14 @@ def stripe_webhook():
             db.session.add(payment)
             order.status = "paid"
             db.session.commit()
+            pdf_path = generate_order_pdf(order, payment)
+            pdf_dir = "pdfs/"
+            os.makedirs(pdf_dir, exist_ok=True)
+            input_pdf = os.path.join(pdf_dir, f"order_{order_id}.pdf")
+            signed_pdf = os.path.join(pdf_dir, f"order_{order_id}_signed.pdf")
+            signed_path = sign_pdf(input_pdf, signed_pdf)
+            os.remove(input_pdf)
+            
     elif event["type"] == "payment_intent.payment_failed":
         payment_intent = event["data"]["object"]
         order_id = payment_intent.get("metadata", {}).get("order_id")

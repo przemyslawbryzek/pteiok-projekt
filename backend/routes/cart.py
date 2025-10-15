@@ -17,25 +17,37 @@ def add_to_cart():
     if user_id:
         item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
         if item:
-            item.quantity += quantity
+            if item.quantity + quantity > 0:
+                item.quantity += quantity
+            else:
+                db.session.delete(item)
         else:
-            item = CartItem(user_id=user_id, product_id=product_id, quantity=quantity)
-            db.session.add(item)
+            if quantity > 0:
+                item = CartItem(user_id=user_id, product_id=product_id, quantity=quantity)
+                db.session.add(item)
+            else:
+                return jsonify({"error": "Nieprawidłowa ilość"}), 400
         db.session.commit()
         return jsonify({"message": "Dodano do koszyka użytkownika"}), 201
     else:
         cart = session.get("cart", [])
         for c in cart:
             if c["product_id"] == product_id:
-                c["quantity"] += quantity
+                if c["quantity"] + quantity > 0:
+                    c["quantity"] += quantity
+                else:
+                    cart.remove(c)
                 break
         else:
-            cart.append({
-                "product_id": product.id,
-                "name": product.name,
-                "price": product.price,
-                "quantity": quantity
-            })
+            if quantity > 0:
+                cart.append({
+                    "product_id": product.id,
+                    "name": product.name,
+                    "price": product.price,
+                    "quantity": quantity
+                })
+            else:
+                return jsonify({"error": "Nieprawidłowa ilość"}), 400
         session["cart"] = cart
         session.modified = True
         return jsonify({"message": "Dodano do koszyka sesyjnego", "cart": cart}), 201

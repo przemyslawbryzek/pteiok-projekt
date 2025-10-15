@@ -55,6 +55,7 @@ class Order(db.Model):
 
     payments = db.relationship("Payment", backref="order", lazy=True)
     items = db.relationship("OrderItem", backref="order", lazy=True)
+    user = db.relationship("User", backref="orders")
     def to_dict(self):
         return {
             "id": self.id,

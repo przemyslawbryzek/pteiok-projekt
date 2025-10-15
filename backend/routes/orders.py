@@ -1,7 +1,7 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Order, OrderItem, CartItem
-
+from models import db, Order, OrderItem, CartItem, Payment
+import os
 order_bp = Blueprint('orders', __name__)
 
 @order_bp.route("/api/checkout", methods=["POST"])
@@ -52,3 +52,14 @@ def get_order(order_id):
         return jsonify({"error": "Brak dostępu"}), 403
 
     return jsonify(order.to_dict()), 200
+
+@order_bp.route("/api/order/<int:order_id>/pdf", methods=["GET"])
+@jwt_required()
+def get_pdf(order_id):
+    user_id = get_jwt_identity()
+    order = Order.query.get_or_404(order_id)
+    if str(order.user_id) != str(user_id):
+        return jsonify({"error": "Brak dostępu"}), 403
+    pdf_dir = "pdfs/"
+    signed_path = os.path.join(pdf_dir, f"order_{order_id}_signed.pdf")
+    return send_file(signed_path, as_attachment=True)
