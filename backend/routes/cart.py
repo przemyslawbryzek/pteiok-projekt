@@ -44,7 +44,8 @@ def add_to_cart():
                     "product_id": product.id,
                     "name": product.name,
                     "price": product.price,
-                    "quantity": quantity
+                    "quantity": quantity,
+                    "images" : product.images()
                 })
             else:
                 return jsonify({"error": "Nieprawidłowa ilość"}), 400
