@@ -16,12 +16,27 @@ def register():
         return jsonify({"error": "Użytkownik o tym e-mailu już istnieje"}), 400
 
     hashed_password = generate_password_hash(data['password'])
-    new_user = User(email=data['email'], password=hashed_password)
+    user = User(email=data['email'], password=hashed_password)
 
-    db.session.add(new_user)
+    db.session.add(user)
     db.session.commit()
+    access_token = access_token = create_access_token(
+    identity=str(user.id))
+    session_cart = session.get("cart", [])
+    for item in session_cart:
+        existing = CartItem.query.filter_by(user_id=user.id, product_id=item["product_id"]).first()
+        if existing:
+            existing.quantity += item["quantity"]
+        else:
+            db.session.add(CartItem(
+                user_id=user.id,
+                product_id=item["product_id"],
+                quantity=item["quantity"]
+            ))
+    db.session.commit()
+    session.pop("cart", None)
 
-    return jsonify({"message": "Rejestracja zakończona sukcesem", "user_id": new_user.id}), 201
+    return jsonify({"message": "Rejestracja zakończona sukcesem", "user_id": user.id, "access_token": access_token}), 201
 
 @users_bp.route('/api/login', methods=['POST'])
 def login():
@@ -55,5 +70,5 @@ def profile():
     current_user = get_jwt_identity()
     return jsonify({
         "message": "Dane profilu użytkownika",
-        "user": current_user
+        "user_id": current_user
     }), 200

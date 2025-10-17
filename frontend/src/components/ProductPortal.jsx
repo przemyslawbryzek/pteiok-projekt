@@ -1,9 +1,9 @@
 import ReactDOM from "react-dom";
 import {Link} from "react-router-dom";
-import React, { useState } from "react";
+import { useState } from "react";
 import { api } from "../api/api";
 
-export default function ProductPortal({ product, onClose }) {
+export default function ProductPortal({ product, onAddToCart, onClose }) {
   if (!product) return null;
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
 
@@ -44,9 +44,11 @@ export default function ProductPortal({ product, onClose }) {
                     <p className="p-2">{product.price} PLN</p>
                     <button onClick={() =>api.post(
                         "/cart",
-                        { product_id: product.id, quantity: 1 },
-                        { withCredentials: true }
-                    )}
+                        { product_id: product.id, quantity: 1 }) 
+                        .then(() => {
+                            onClose();     
+                            onAddToCart();  
+                        })}
                     className="bg-black text-white p-2 hover:bg-white hover:text-black border-1 border-black duration-300">
                         Add to Bag
                     </button>

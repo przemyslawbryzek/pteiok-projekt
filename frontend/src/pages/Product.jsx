@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/api";
 
-export default function Product(){
+export default function Product({onAddToCart}){
     const { id } = useParams();
     const [product, setProduct] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -45,9 +45,8 @@ export default function Product(){
                     <p className="p-2">{product.price} PLN</p>
                     <button onClick={() =>api.post(
                         "/cart",
-                        { product_id: product.id, quantity: 1 },
-                        { withCredentials: true }
-                    )}
+                        { product_id: product.id, quantity: 1 }).then(()=>{onAddToCart();})
+                    }
                     className="bg-black text-white p-2 hover:bg-white hover:text-black border-1 border-black duration-300">Add to Bag</button>
                     <div className="p-2">
                         <div 

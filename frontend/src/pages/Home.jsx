@@ -3,7 +3,7 @@ import { api } from "../api/api";
 import ProductPortal from "../components/ProductPortal";
 import {Link} from "react-router-dom";
 
-export default function Home() {
+export default function Home({ onAddToCart }) {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -34,6 +34,7 @@ export default function Home() {
       {selectedProduct && (
         <ProductPortal
           product={selectedProduct}
+          onAddToCart={onAddToCart}
           onClose={() => setSelectedProduct(null)}
         />
       )}

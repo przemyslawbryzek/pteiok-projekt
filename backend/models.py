@@ -39,11 +39,9 @@ class CartItem(db.Model):
             "product_id": self.product_id,
             "quantity": self.quantity,
             "user_id": self.user_id,
-            "product": {
-                "name": self.product.name,
-                "price": self.product.price,
-                "image_urls": self.product.images() if hasattr(self.product, 'images') else []
-            }
+            "name": self.product.name,
+            "price": self.product.price,
+            "images": self.product.images() if hasattr(self.product, 'images') else []
         }
 
 class Order(db.Model):

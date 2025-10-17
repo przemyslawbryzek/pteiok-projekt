@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom";
-import React, { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import {Link} from "react-router-dom";
 import { api } from "../api/api";
 import { LuTrash } from "react-icons/lu";
@@ -14,11 +14,11 @@ export default function Cart({onClose}){
             { product_id: id, quantity: qty - currentQty }, 
             { withCredentials: true }
         )
-        .then(() => api.get("/cart", { withCredentials: true }).then((res) => setCartItems(res.data))); 
+        .then(() => api.get("/cart").then((res) => setCartItems(res.data))); 
         };
 
     useEffect(() => {
-        api.get("/cart", { withCredentials: true }).then((res) => setCartItems(res.data));
+        api.get("/cart").then((res) => setCartItems(res.data));
     }, []);
     return ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/70 z-50">
@@ -44,7 +44,10 @@ export default function Cart({onClose}){
                                     className="w-25 h-25"
                                 />
                                 <div className="flex flex-col justify-between text-left w-full pl-2">
-                                    <p>{item.name}</p>
+                                    <Link to={`/products/${item.product_id}`}
+                                        className="hover:border-b-1 self-start">
+                                            {item.name}
+                                        </Link>
                                     <p>{item.price+" PLN"}</p>
                                     <QuantityInput
                                         value={item.quantity}
@@ -52,8 +55,8 @@ export default function Cart({onClose}){
                                     />
                                 </div>
                                 <div className="flex flex-col justify-between items-end text-nowrap">
-                                <button onClick={() =>api.delete(`/cart/${item.product_id}`,{ withCredentials: true })
-                                    .then(() => api.get("/cart", { withCredentials: true }))
+                                <button onClick={() =>api.delete(`/cart/${item.product_id}`)
+                                    .then(() => api.get("/cart"))
                                     .then((res) => setCartItems(res.data))
                                 }
                                 >
@@ -73,14 +76,18 @@ export default function Cart({onClose}){
                                 className="bg-black text-white p-2 hover:bg-white hover:text-black border-1 border-black duration-300 w-full">
                                     Checkout
                                 </button>
-                                <button onClick={() =>api.delete("/cart",{ withCredentials: true })
-                                    .then(() => api.get("/cart", { withCredentials: true }))
+                                <button onClick={() =>api.delete("/cart")
+                                    .then(() => api.get("/cart"))
                                     .then((res) => setCartItems(res.data))
                                 }
                                 className="p-2 bg-white text-black border-1 border-black duration-300 hover:bg-stone-200 w-full">
                                     Clear Bag
                                 </button>
-                                <Link className="border-b-1 hover:border-b-2 w-50 text-center text-xs p-2 text-center">View Shopping Bag Details</Link>
+                                <Link onClick={()=>onClose()} 
+                                to="/cart" 
+                                className="border-b-1 hover:border-b-2 w-50 text-center text-xs p-2 text-center">
+                                    View Shopping Bag Details
+                                </Link>
                             </div>
                         </div>
                         
